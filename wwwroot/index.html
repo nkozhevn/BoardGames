@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>List of games</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>List of games</h2>
+    <div id="errors" class="alert alert-danger" style="display:none;"></div>
+    <form name="gameForm">
+        <input type="hidden" name="id" value="0" />
+        <div class="form-group col-md-5">
+            <label for="name">Name:</label>
+            <input class="form-control" name="name" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="rating">Rating:</label>
+            <input class="form-control" name="rating" type="number" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" id="submit" class="btn btn-primary">Save</button>
+            <a id="reset" class="btn btn-primary">Reset</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped  col-md-6">
+        <thead><tr><th>Id</th><th>Name</th><th>Rating</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+    <div></div>
+    <script>
+        // Getting all the games
+        async function GetGames() {
+            // Getting the response
+            const response = await fetch("/api/games", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            // If response is ok
+            if (response.ok === true) {
+                // Getting data
+                const games = await response.json();
+                let rows = document.querySelector("tbody");
+                games.forEach(game => {
+                    // Posting data to the table
+                    rows.append(row(game));
+                });
+            }
+        }
+        // Getting one game
+        async function GetGame(id) {
+            const response = await fetch("/api/games/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const game = await response.json();
+                const form = document.forms["gameForm"];
+                form.elements["id"].value = game.id;
+                form.elements["name"].value = game.name;
+                form.elements["rating"].value = game.rating;
+            }
+        }
+        // Adding the game
+        async function CreateGame(gameName, gameRating) {
+
+            const response = await fetch("api/games", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: gameName,
+                    rating: parseInt(gameRating, 10)
+                })
+            });
+            if (response.ok === true) {
+                const game = await response.json();
+                reset();
+                document.querySelector("tbody").append(row(game));
+            }
+            else {
+                const errorData = await response.json();
+                console.log("errors", errorData);
+                if (errorData) {
+                    // Errors after validation
+                    if (errorData.errors) {
+                         if (errorData.errors["Name"]) {
+                            addError(errorData.errors["Name"]);
+                        }
+                        if (errorData.errors["Rating"]) {
+                            addError(errorData.errors["Rating"]);
+                        }
+                    }
+                    // Castom errors in the controller
+                    if (errorData["Name"]) {
+                        addError(errorData["Name"]);
+                    }
+
+                    if (errorData["Rating"]) {
+                        addError(errorData["Rating"]);
+                    }
+                }
+
+                document.getElementById("errors").style.display = "block";
+            }
+        }
+        // Editing the game
+        async function EditGame(gameId, gameName, gameRating) {
+            const response = await fetch("api/games", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: parseInt(gameId, 10),
+                    name: gameName,
+                    age: parseInt(gameRating, 10)
+                })
+            });
+            if (response.ok === true) {
+                const game = await response.json();
+                reset();
+                document.querySelector("tr[data-rowid='" + game.id + "']").replaceWith(row(game));
+            }
+        }
+        // Deleting the game
+        async function DeleteGame(id) {
+            const response = await fetch("/api/games/" + id, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const game = await response.json();
+                document.querySelector("tr[data-rowid='" + game.id + "']").remove();
+            }
+        }
+
+        // Reseting the form
+        function reset() {
+            const form = document.forms["gameForm"];
+            form.reset();
+            form.elements["id"].value = 0;
+        }
+        function addError(errors) {
+            errors.forEach(error => {
+                const p = document.createElement("p");
+                p.append(error);
+                document.getElementById("errors").append(p);
+            });
+        }
+        // Creating a row for the table
+        function row(game) {
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", game.id);
+
+            const idTd = document.createElement("td");
+            idTd.append(game.id);
+            tr.append(idTd);
+
+            const nameTd = document.createElement("td");
+            nameTd.append(game.name);
+            tr.append(nameTd);
+
+            const ratingTd = document.createElement("td");
+            ratingTd.append(game.rating);
+            tr.append(ratingTd);
+
+            const linksTd = document.createElement("td");
+
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", game.id);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                GetGame(game.id);
+            });
+            linksTd.append(editLink);
+
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", game.id);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                DeleteGame(game.id);
+            });
+
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+
+            return tr;
+        }
+        // Reseting form values
+        document.getElementById("reset").addEventListener("click", function (e) {
+
+            e.preventDefault();
+            reset();
+        })
+
+        // Sending the form
+        document.forms["gameForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            document.getElementById("errors").innerHTML="";
+            document.getElementById("errors").style.display = "none";
+            
+            const form = document.forms["gameForm"];
+            const id = form.elements["id"].value;
+            const name = form.elements["name"].value;
+            const rating = form.elements["rating"].value;
+            if (id == 0)
+                CreateGame(name, rating);
+            else
+                EditGame(id, name, rating);
+        });
+
+        // Loading games
+        GetGames();
+
+    </script>
+</body>
+</html>
