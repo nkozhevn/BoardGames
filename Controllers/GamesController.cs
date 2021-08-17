@@ -17,8 +17,8 @@ namespace BoardGames.Controllers
             db = context;
             if (!db.Games.Any())
             {
-                db.Games.Add(new Game { Name = "Carcassone", Rating = 7 });
-                db.Games.Add(new Game { Name = "Blood Rage", Rating = 9 });
+                db.Games.Add(new Game { Name = "Carcassone", Players = 6, Rating = 7 });
+                db.Games.Add(new Game { Name = "Blood Rage", Players = 4, Rating = 9 });
                 db.SaveChanges();
             }
         }

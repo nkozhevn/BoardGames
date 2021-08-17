@@ -9,7 +9,7 @@ namespace BoardGames
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            string con = "Server=(localdb)\\mssqllocaldb;Database=gamesdbtest1;Trusted_Connection=True;";
+            string con = "Server=(localdb)\\mssqllocaldb;Database=gamesdb;Trusted_Connection=True;";
             // Setting context of the data
             services.AddDbContext<GamesContext>(options => options.UseSqlServer(con));
 

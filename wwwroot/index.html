@@ -16,6 +16,10 @@
             <input class="form-control" name="name" />
         </div>
         <div class="form-group col-md-5">
+            <label for="players">Maximum of players:</label>
+            <input class="form-control" name="players" type="number" />
+        </div>
+        <div class="form-group col-md-5">
             <label for="rating">Rating:</label>
             <input class="form-control" name="rating" type="number" />
         </div>
@@ -25,7 +29,7 @@
         </div>
     </form>
     <table class="table table-condensed table-striped  col-md-6">
-        <thead><tr><th>Id</th><th>Name</th><th>Rating</th><th></th></tr></thead>
+        <thead><tr><th>Id</th><th>Name</th><th>Maximum of players</th><th>Rating</th><th></th></tr></thead>
         <tbody>
         </tbody>
     </table>
@@ -60,17 +64,19 @@
                 const form = document.forms["gameForm"];
                 form.elements["id"].value = game.id;
                 form.elements["name"].value = game.name;
+                form.elements["players"].value = game.players;
                 form.elements["rating"].value = game.rating;
             }
         }
         // Adding the game
-        async function CreateGame(gameName, gameRating) {
+        async function CreateGame(gameName, gamePlayers, gameRating) {
 
             const response = await fetch("api/games", {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: gameName,
+                    players: parseInt(gamePlayers, 10),
                     rating: parseInt(gameRating, 10)
                 })
             });
@@ -85,8 +91,11 @@
                 if (errorData) {
                     // Errors after validation
                     if (errorData.errors) {
-                         if (errorData.errors["Name"]) {
+                        if (errorData.errors["Name"]) {
                             addError(errorData.errors["Name"]);
+                        }
+                        if (errorData.errors["Players"]) {
+                            addError(errorData.errors["Players"]);
                         }
                         if (errorData.errors["Rating"]) {
                             addError(errorData.errors["Rating"]);
@@ -95,6 +104,10 @@
                     // Castom errors in the controller
                     if (errorData["Name"]) {
                         addError(errorData["Name"]);
+                    }
+
+                    if (errorData["Players"]) {
+                        addError(errorData["Players"]);
                     }
 
                     if (errorData["Rating"]) {
@@ -106,14 +119,15 @@
             }
         }
         // Editing the game
-        async function EditGame(gameId, gameName, gameRating) {
+        async function EditGame(gameId, gameName, gamePlayers, gameRating) {
             const response = await fetch("api/games", {
                 method: "PUT",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
                 body: JSON.stringify({
                     id: parseInt(gameId, 10),
                     name: gameName,
-                    age: parseInt(gameRating, 10)
+                    players: parseInt(gamePlayers, 10),
+                    rating: parseInt(gameRating, 10)
                 })
             });
             if (response.ok === true) {
@@ -160,6 +174,10 @@
             const nameTd = document.createElement("td");
             nameTd.append(game.name);
             tr.append(nameTd);
+
+            const playersTd = document.createElement("td");
+            playersTd.append(game.players);
+            tr.append(playersTd);
 
             const ratingTd = document.createElement("td");
             ratingTd.append(game.rating);
@@ -209,11 +227,12 @@
             const form = document.forms["gameForm"];
             const id = form.elements["id"].value;
             const name = form.elements["name"].value;
+            const players = form.elements["players"].value;
             const rating = form.elements["rating"].value;
             if (id == 0)
-                CreateGame(name, rating);
+                CreateGame(name, players, rating);
             else
-                EditGame(id, name, rating);
+                EditGame(id, name, players, rating);
         });
 
         // Loading games
